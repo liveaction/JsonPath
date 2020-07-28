@@ -5,7 +5,7 @@ def basePom = {
         name project.displayName
         packaging 'bundle'
         description project.description
-        url 'https://github.com/jayway/JsonPath'
+        url 'https://github.com/liveaction/JsonPath'
 
         licenses {
             license {
@@ -16,9 +16,9 @@ def basePom = {
         }
 
         scm {
-            url 'scm:git:git://github.com/jayway/JsonPath.git'
-            connection 'scm:git:git://github.com/jayway/JsonPath.git'
-            developerConnection 'scm:git:git://github.com/jayway/JsonPath.git'
+            url 'scm:git:git://github.com/liveaction/JsonPath'
+            connection 'scm:git:git://github.com/liveaction/JsonPath.git'
+            developerConnection 'scm:git:git://github.com/liveaction/JsonPath.git'
         }
 
         developers {
@@ -46,15 +46,15 @@ install {
 uploadArchives {
     deployers << repositories.mavenDeployer {
         if (snapshotVersion) {
-            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-                if (project.hasProperty("sonatypeOssUsername")) {
-                    authentication(userName: sonatypeOssUsername, password: sonatypeOssPassword)
+            snapshotRepository(url: artifactory_contextUrl + "/snapshots/") {
+                if (project.hasProperty("artifactory_user")) {
+                    authentication(userName: artifactory_user, password: artifactory_password)
                 }
             }
         } else {
-            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                if (project.hasProperty("sonatypeOssUsername")) {
-                    authentication(userName: sonatypeOssUsername, password: sonatypeOssPassword)
+            repository(url: artifactory_contextUrl + "/releases/") {
+                if (project.hasProperty("artifactory_user")) {
+                    authentication(userName: artifactory_user, password: artifactory_password)
                 }
             }
         }
@@ -91,4 +91,4 @@ modifyPom { pom ->
     pom.dependencies.removeAll { it.scope == "test" }
 }
 
-deployers*.beforeDeployment { signing.signPom(it) }
+//deployers*.beforeDeployment { signing.signPom(it) }

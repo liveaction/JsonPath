@@ -1,19 +1,15 @@
-
-
-task printProps {
-    doLast {
-        println artifactory_user
-        println artifactory_password
-        println artifactory_contextUrl
-    }
-}
-
-
 buildscript {
     repositories {
-	jcenter()
-	maven {
+        jcenter()
+        maven {
             url 'https://artifactory.liveaction.com:443/artifactory/public'
+            credentials {
+                username = "${artifactory_user}"
+                password = "${artifactory_password}"
+            }
+        }
+        maven {
+            url 'https://artifactory.liveaction.com:443/artifactory/maven-public'
             credentials {
                 username = "${artifactory_user}"
                 password = "${artifactory_password}"
@@ -21,8 +17,8 @@ buildscript {
         }
     }
     dependencies {
-	//Check for the latest version here: http://plugins.gradle.org/plugin/com.jfrog.artifactory
-        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4+'
+        //Check for the latest version here: http://plugins.gradle.org/plugin/com.jfrog.artifactory
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4+"
         classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
         classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.0'
         classpath 'com.github.jengelman.gradle.plugins:shadow:5.1.0'
@@ -52,6 +48,13 @@ ext {
 }
 
 allprojects {
+
+    apply plugin: "com.jfrog.artifactory"
+    apply plugin: 'maven-publish'
+    apply plugin: 'java'
+    apply plugin: 'maven'
+    // apply plugin: 'signing'
+
     ext.displayName = null
     ext.buildTimestamp = new Date().format('yyyy-MM-dd HH:mm:ss')
 
@@ -63,7 +66,65 @@ allprojects {
             options.addStringOption('Xdoclint:none', '-quiet')
         }
     }
-    apply plugin: "com.jfrog.artifactory"
+
+    manifest {
+		attributes 'provider': 'gradle'
+	}
+    configurations {
+      published
+    }
+    // dependencies {
+    //   testImplementation 'junit:junit:4.7'
+    // }
+    // task sourceJar(type: Jar) {
+    //   from sourceSets.main.allSource
+    //   classifier = 'sources'
+    // }
+    // task javadocJar(type: Jar, dependsOn: javadoc) {
+    //   classifier = 'javadoc'
+    //   from javadoc.destinationDir
+    // }
+    // artifactoryPublish {
+    //   dependsOn sourceJar
+    // //   , javadocJar
+    // }
+    // artifacts {
+    //   published sourceJar
+    // //   published javadocJar
+    // }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+                // artifactId = jar.archiveBaseName
+            }
+        }
+    }
+    // signing {
+    //     sign publishing.publications.mavenJava
+    // }
+
+
+}
+
+apply plugin: "com.jfrog.artifactory"
+apply plugin: 'maven-publish'
+apply plugin: 'java'
+apply plugin: 'maven'
+// apply plugin: 'signing'
+
+// publishing {
+//     publications {
+//         mavenJava(MavenPublication) {
+//             from components.java
+//             // artifactId = jar.archiveBaseName
+//         }
+//     }
+// }
+
+configurations {
+  published
 }
 
 artifactory {
@@ -76,6 +137,13 @@ artifactory {
             maven = true
             
         }
+        defaults {
+            publications ('mavenJava')
+            publishConfigs('archives', 'published')
+        }
+        publishBuildInfo = true
+        publishArtifacts = true
+        publishPom = true
     }
     resolve {
         repository {
@@ -90,7 +158,7 @@ artifactory {
 
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'signing'
+    // apply plugin: 'signing'
     apply plugin: 'osgi'
 
     sourceCompatibility = 1.8
@@ -110,10 +178,10 @@ subprojects {
         from sourceSets.main.allSource
     }
 
-    signing {
-        required { !snapshotVersion && gradle.taskGraph.hasTask("uploadArchives") }
-        sign configurations.archives
-    }
+    // signing {
+    //     required { !snapshotVersion && gradle.taskGraph.hasTask("uploadArchives") }
+    //     sign configurations.archives
+    // }
 
     artifacts {
         archives jar, javadocJar, sourcesJar
