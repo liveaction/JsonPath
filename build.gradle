@@ -1,8 +1,28 @@
+
+
+task printProps {
+    doLast {
+        println artifactory_user
+        println artifactory_password
+        println artifactory_contextUrl
+    }
+}
+
+
 buildscript {
     repositories {
-        jcenter()
+	jcenter()
+	maven {
+            url 'https://artifactory.liveaction.com:443/artifactory/public'
+            credentials {
+                username = "${artifactory_user}"
+                password = "${artifactory_password}"
+            }
+        }
     }
     dependencies {
+	//Check for the latest version here: http://plugins.gradle.org/plugin/com.jfrog.artifactory
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4+'
         classpath 'me.champeau.gradle:gradle-javadoc-hotfix-plugin:0.1'
         classpath 'me.champeau.gradle:japicmp-gradle-plugin:0.1.0'
         classpath 'com.github.jengelman.gradle.plugins:shadow:5.1.0'
@@ -36,11 +56,34 @@ allprojects {
     ext.buildTimestamp = new Date().format('yyyy-MM-dd HH:mm:ss')
 
     group = 'com.jayway.jsonpath'
-    version = '2.4.0' + (snapshotVersion ? "-SNAPSHOT" : "")
+    version = '2.4.0-la' + (snapshotVersion ? "-SNAPSHOT" : "")
 
     if (JavaVersion.current().isJava8Compatible()) {
         tasks.withType(Javadoc) {
             options.addStringOption('Xdoclint:none', '-quiet')
+        }
+    }
+    apply plugin: "com.jfrog.artifactory"
+}
+
+artifactory {
+    contextUrl = "${artifactory_contextUrl}"   //The base Artifactory URL if not overridden by the publisher/resolver
+    publish {
+        repository {
+            repoKey = 'releases'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+            
+        }
+    }
+    resolve {
+        repository {
+            repoKey = 'public'
+            username = "${artifactory_user}"
+            password = "${artifactory_password}"
+            maven = true
+            
         }
     }
 }
